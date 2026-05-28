@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Github, Linkedin, Twitter, Mail } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -14,31 +15,75 @@ export function Footer() {
         </div>
 
         {/* RIGHT */}
-        <div className="flex items-start gap-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-          <Link
-            href="/contributors"
-            className="transition-colors duration-200 hover:text-black dark:hover:text-white"
-          >
-            Contributors
-          </Link>
+        <div className="flex flex-col items-start gap-5">
+          {/* NAV LINKS */}
+          <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            <Link
+              href="/contributors"
+              className="transition-colors duration-200 hover:text-black dark:hover:text-white"
+            >
+              Contributors
+            </Link>
 
-          <a
-            href="https://github.com/JhaSourav07/commitpulse/blob/main/README.md"
-            target="_blank"
-            rel="noreferrer"
-            className="transition-colors duration-200 hover:text-black dark:hover:text-white"
-          >
-            Documentation
-          </a>
+            <a
+              href="https://github.com/JhaSourav07/commitpulse/blob/main/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors duration-200 hover:text-black dark:hover:text-white"
+            >
+              Documentation
+            </a>
 
-          <a
-            href="https://github.com/jhasourav07"
-            target="_blank"
-            rel="noreferrer"
-            className="transition-colors duration-200 hover:text-black dark:hover:text-white"
-          >
-            Creator
-          </a>
+            <a
+              href="https://github.com/jhasourav07"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors duration-200 hover:text-black dark:hover:text-white"
+            >
+              Creator
+            </a>
+          </div>
+
+          {/* SOCIAL MEDIA ICONS */}
+          <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
+            <a
+              href="https://github.com/jhasourav07"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              className="rounded-full p-2 transition-all duration-200 hover:-translate-y-1 hover:text-black dark:hover:text-white"
+            >
+              <Github size={18} />
+            </a>
+
+            <a
+              href="https://linkedin.com/in/your-linkedin"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="rounded-full p-2 transition-all duration-200 hover:-translate-y-1 hover:text-black dark:hover:text-white"
+            >
+              <Linkedin size={18} />
+            </a>
+
+            <a
+              href="https://twitter.com/your-twitter"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter / X"
+              className="rounded-full p-2 transition-all duration-200 hover:-translate-y-1 hover:text-black dark:hover:text-white"
+            >
+              <Twitter size={18} />
+            </a>
+
+            <a
+              href="mailto:your@email.com"
+              aria-label="Email"
+              className="rounded-full p-2 transition-all duration-200 hover:-translate-y-1 hover:text-black dark:hover:text-white"
+            >
+              <Mail size={18} />
+            </a>
+          </div>
         </div>
       </div>
 
