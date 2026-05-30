@@ -7,9 +7,8 @@ import { screen, fireEvent } from '@testing-library/react';
 vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   motion: {
-    button: ({ children, ...props }: React.ComponentProps<'button'>) => (
-      <button {...props}>{children}</button>
-    ),
+    button: ({ children, ...props }) => <button {...props}>{children}</button>,
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
   },
 }));
 
@@ -100,7 +99,9 @@ describe('ReturnToTop', () => {
 
     render(<ReturnToTop />);
 
-    expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+    expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function), {
+      passive: true,
+    });
   });
 
   it('removes scroll event listener on unmount', () => {
