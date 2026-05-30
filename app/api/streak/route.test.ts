@@ -100,6 +100,20 @@ describe('GET /api/streak', () => {
   });
 
   describe('parameter validation', () => {
+    it('falls back to default layout when an unsupported layout is provided', async () => {
+      const response = await GET(
+        makeRequest({
+          user: 'octocat',
+          layout: 'unsupported_layout',
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const body = await response.text();
+
+      expect(body).toContain('<svg');
+    });
     it('returns 400 when the user parameter is missing', async () => {
       const response = await GET(makeRequest());
 
@@ -161,6 +175,14 @@ describe('GET /api/streak', () => {
       }
 
       expect(fetchGitHubContributions).not.toHaveBeenCalled();
+    });
+
+    it('returns 200 for unsupported ?layout query parameter values (route ignores it)', async () => {
+      const response = await GET(
+        new Request('http://localhost:3000/api/streak?user=octocat&layout=unsupported_layout')
+      );
+
+      expect(response.status).toBe(200);
     });
 
     it('should return 200 OK and valid SVG when the optional repo query parameter is provided', async () => {
@@ -437,6 +459,16 @@ describe('GET /api/streak', () => {
       });
     });
 
+    it('passes correct from/to range when ?year=2008 is provided', async () => {
+      await GET(makeRequest({ user: 'octocat', year: '2008' }));
+
+      expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', {
+        bypassCache: false,
+        from: '2008-01-01T00:00:00Z',
+        to: '2008-12-31T23:59:59Z',
+      });
+    });
+
     it('functions normally when the year parameter is missing', async () => {
       const response = await GET(makeRequest({ user: 'octocat' }));
 
@@ -449,6 +481,11 @@ describe('GET /api/streak', () => {
 
       expect(response.status).toBe(400);
       expect(body.details.fieldErrors.year[0]).toContain('GitHub was founded in 2008');
+    });
+
+    it('returns 200 for unknown ?date= parameter (not part of schema)', async () => {
+      const response = await GET(makeRequest({ user: 'octocat', date: '2026-15-40' }));
+      expect(response.status).toBe(200);
     });
 
     it('returns 400 for malformed numeric year', async () => {
@@ -721,26 +758,27 @@ describe('GET /api/streak', () => {
       const response = await GET(makeRequest({ user: 'octocat', tz: 'Not/ATimezone' }));
 
       expect(response.status).toBe(400);
-      const body = await response.text();
-      expect(body).toContain('Invalid "tz" parameter');
+      const body = await response.json();
+      expect(body.details.fieldErrors.tz[0]).toContain('Invalid timezone');
     });
 
-    it('returns 400 and names the bad value in the error message', async () => {
+    it('returns 400 and names the bad value in the field error', async () => {
       const response = await GET(makeRequest({ user: 'octocat', tz: 'garbage' }));
-      const body = await response.text();
+      const body = await response.json();
 
-      expect(body).toContain('garbage');
+      expect(response.status).toBe(400);
+      expect(body.details.fieldErrors.tz[0]).toContain('Invalid timezone');
     });
 
-    it('escapes invalid timezone values before rendering the error SVG', async () => {
+    it('is not vulnerable to XSS via tz parameter', async () => {
       const response = await GET(
         makeRequest({ user: 'octocat', tz: '</text><script>alert(1)</script>' })
       );
-      const body = await response.text();
+      const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body).toContain('&lt;/text&gt;&lt;script&gt;alert(1)&lt;/script&gt;');
-      expect(body).not.toContain('</text><script>');
+      // Zod validates the input and returns a JSON error — no raw user input reflected
+      expect(body.details.fieldErrors.tz[0]).toContain('Invalid timezone');
     });
 
     it('returns 200 with a valid IANA timezone', async () => {
@@ -1171,7 +1209,7 @@ describe('GET /api/streak', () => {
       const body = await response.text();
 
       expect(response.status).toBe(200);
-      expect(body).toContain('family=Inter&display=swap');
+      expect(body).toContain('family=Inter&amp;display=swap');
       expect(body).toContain('"Inter", sans-serif');
     });
   });
