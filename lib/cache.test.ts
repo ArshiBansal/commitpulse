@@ -402,6 +402,20 @@ describe('TTLCache', () => {
       expect(cache.get('tags')).toEqual(tags);
       cache.destroy();
     });
+    it('preserves Date instance values in TTLCache', () => {
+      const cache = new TTLCache<Date>();
+
+      const date = new Date('2026-05-31T00:00:00.000Z');
+
+      cache.set('created-at', date, 60_000);
+
+      const cached = cache.get('created-at');
+
+      expect(cached).toBeInstanceOf(Date);
+      expect(cached?.toISOString()).toBe(date.toISOString());
+
+      cache.destroy();
+    });
 
     it('stores and retrieves nested object values', () => {
       const cache = new TTLCache<{
@@ -426,6 +440,13 @@ describe('TTLCache', () => {
   });
 
   describe('edge cases and error handling', () => {
+    // FIX: New test explicitly targeting the -5000 boundary for Issue #1398
+    it('throws RangeError when setting a value with -5000 TTL', () => {
+      const cache = new TTLCache<string>();
+      expect(() => cache.set('key', 'value', -5000)).toThrow(RangeError);
+      cache.destroy();
+    });
+
     it('throws RangeError when ttlMs is 0 or negative', () => {
       const cache = new TTLCache<string>();
       expect(() => cache.set('key', 'value', 0)).toThrow(RangeError);
@@ -473,6 +494,7 @@ describe('TTLCache', () => {
       expect([null, 'lived']).toContain(result);
       cache.destroy();
     });
+
     it('does not throw when ttlMs is Number.EPSILON', () => {
       const cache = new TTLCache<string>();
 
@@ -516,6 +538,20 @@ describe('TTLCache', () => {
       expect(cache.get('infinite-key')).toBe('boundary-value');
 
       expect(cache.has('infinite-key')).toBe(true);
+
+      cache.destroy();
+    });
+
+    it('handles oversized cache keys safely', () => {
+      const cache = new TTLCache<string>();
+
+      const oversizedKey = 'a'.repeat(20000);
+
+      expect(() => {
+        cache.set(oversizedKey, 'large-key-value', 60_000);
+      }).not.toThrow();
+
+      expect(cache.get(oversizedKey)).toBe('large-key-value');
 
       cache.destroy();
     });
