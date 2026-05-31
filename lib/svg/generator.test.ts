@@ -768,37 +768,35 @@ describe('generateSVG', () => {
   });
 
   describe('SVG dimensions per size', () => {
-    it('renders width="600" and height="420" for medium size (default)', () => {
+    it('renders responsive width="100%" for medium size (default)', () => {
       const svg = generateSVG(
         mockStats,
         { user: 'avi', size: 'medium' } as unknown as BadgeParams,
         mockCalendar
       );
-
-      expect(svg).toContain('width="600"');
-      expect(svg).toContain('height="420"');
+      expect(svg).toContain('width="100%"');
+      // viewBox should still carry the correct pixel dimensions
+      expect(svg).toContain('viewBox="0 0 600 420"');
     });
 
-    it('renders width="400" and height="280" for small size', () => {
+    it('renders responsive width="100%" for small size with correct viewBox', () => {
       const svg = generateSVG(
         mockStats,
         { user: 'avi', size: 'small' } as unknown as BadgeParams,
         mockCalendar
       );
-
-      expect(svg).toContain('width="400"');
-      expect(svg).toContain('height="280"');
+      expect(svg).toContain('width="100%"');
+      expect(svg).toContain('viewBox="0 0 400 280"');
     });
 
-    it('renders width="800" and height="560" for large size', () => {
+    it('renders responsive width="100%" for large size with correct viewBox', () => {
       const svg = generateSVG(
         mockStats,
         { user: 'avi', size: 'large' } as unknown as BadgeParams,
         mockCalendar
       );
-
-      expect(svg).toContain('width="800"');
-      expect(svg).toContain('height="560"');
+      expect(svg).toContain('width="100%"');
+      expect(svg).toContain('viewBox="0 0 800 560"');
     });
   });
 
@@ -967,7 +965,6 @@ describe('generateMonthlySVG', () => {
     expect(svg).toContain('width="400"');
     expect(svg).toContain('height="200"');
   });
-
   it('includes prefers-reduced-motion media query in static monthly SVG output', () => {
     const svg = generateMonthlySVG(mockMonthlyStats, {
       user: 'octocat',
@@ -987,6 +984,17 @@ describe('generateMonthlySVG', () => {
     expect(svg).toContain('prefers-reduced-motion: reduce');
     expect(svg).toContain('animation: none !important');
     expect(svg).toContain('transition: none !important');
+  });
+
+  it('includes CSS variables in auto-theme monthly SVG', () => {
+    const svg = generateMonthlySVG(mockMonthlyStats, {
+      user: 'octocat',
+      autoTheme: true,
+    } as unknown as BadgeParams);
+
+    expect(svg).toContain('--cp-bg');
+    expect(svg).toContain('--cp-accent');
+    expect(svg).toContain('prefers-color-scheme: dark');
   });
 
   it('supports dynamic Google Fonts for non-predefined fonts in monthly auto-theme mode', () => {
