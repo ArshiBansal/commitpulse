@@ -6,6 +6,8 @@ import BrandParticles from '@/components/BrandParticles';
 import ReturnToTop from '@/components/ReturnToTop';
 import type { Metadata } from 'next';
 import ScrollRestoration from './components/ScrollRestoration';
+import AnimatedCursor from '@/components/AnimatedCursor';
+import KonamiEasterEgg from '@/components/KonamiEasterEgg';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -66,7 +68,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -87,10 +89,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <ScrollRestoration />
+        <AnimatedCursor />
         <BrandParticles />
         <Navbar />
         <div className="relative z-10">{children}</div>
         <ReturnToTop />
+        <KonamiEasterEgg />
         <Analytics />
       </body>
     </html>

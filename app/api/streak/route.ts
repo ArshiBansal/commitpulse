@@ -1,8 +1,9 @@
 // app/api/streak/route.ts
 
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { fetchGitHubContributions, getOrgDashboardData } from '@/lib/github';
-import { calculateStreak, calculateMonthlyStats } from '@/lib/calculate';
+import { calculateStreak, calculateMonthlyStats, aggregateCalendars } from '@/lib/calculate';
 import {
   generateNotFoundSVG,
   generateRateLimitSVG,
@@ -13,7 +14,7 @@ import {
   generatePulseSVG,
 } from '@/lib/svg/generator';
 import { getSecondsUntilUTCMidnight, getSecondsUntilMidnightInTimezone } from '@/utils/time';
-import type { BadgeParams } from '@/types';
+import type { BadgeParams, ContributionCalendar } from '@/types';
 import { themes } from '@/lib/svg/themes';
 import { streakParamsSchema } from '@/lib/validations';
 import { sanitizeHexColor } from '@/lib/svg/sanitizer';
@@ -91,32 +92,74 @@ export async function GET(request: Request) {
       versus,
       shading,
       gradient,
+      gradient_stops,
+      gradient_dir,
       opacity,
       tz: tzParam,
       disable_particles,
       glow,
       format,
+      days,
+      badges,
     } = parseResult.data;
-
+    const normalizedView = view as 'default' | 'monthly' | 'heatmap' | 'pulse';
     const themeName = theme || 'dark';
-    const from = customFrom
+
+    let timezone = 'UTC';
+    if (tzParam) {
+      try {
+        timezone = new Intl.DateTimeFormat(undefined, { timeZone: tzParam }).resolvedOptions()
+          .timeZone;
+      } catch (error) {
+        if (error instanceof RangeError) {
+          const validationErr = new Error(`Invalid timezone: ${tzParam}`);
+          validationErr.name = 'ValidationError';
+          throw validationErr;
+        }
+        throw error;
+      }
+    }
+
+    let from = customFrom
       ? new Date(customFrom).toISOString()
       : year
         ? `${year}-01-01T00:00:00Z`
         : undefined;
-    const to = customTo
+    let to = customTo
       ? new Date(customTo).toISOString()
       : year
         ? `${year}-12-31T23:59:59Z`
         : undefined;
+
+    if (normalizedView === 'monthly') {
+      const referenceDate = getMonthlyReferenceDate(year, timezone) || new Date();
+      const localTodayStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(
+        referenceDate
+      );
+      const [currentYearStr, currentMonthStr] = localTodayStr.split('-');
+      const currentYearNum = parseInt(currentYearStr, 10);
+      const currentMonthNum = parseInt(currentMonthStr, 10);
+
+      let prevMonth = currentMonthNum - 1;
+      let prevYear = currentYearNum;
+      if (prevMonth === 0) {
+        prevMonth = 12;
+        prevYear -= 1;
+      }
+
+      const calculatedFromStr = `${prevYear}-${prevMonth.toString().padStart(2, '0')}-01T00:00:00Z`;
+      if (!from || new Date(from) > new Date(calculatedFromStr)) {
+        from = calculatedFromStr;
+      }
+
+      const referenceISO = referenceDate.toISOString();
+      if (!to || new Date(to) < new Date(referenceISO)) {
+        to = referenceISO;
+      }
+    }
+
     const currentYear = new Date().getUTCFullYear();
     const isHistoricalYear = !!year && Number(year) < currentYear;
-
-    let timezone = 'UTC';
-    if (tzParam) {
-      timezone = new Intl.DateTimeFormat(undefined, { timeZone: tzParam }).resolvedOptions()
-        .timeZone;
-    }
 
     const isAutoTheme = themeName === 'auto';
     const isRandomTheme = themeName === 'random';
@@ -132,7 +175,15 @@ export async function GET(request: Request) {
     })();
 
     // If 'org' is provided, we use it as the display user
-    const targetEntity = org || user;
+    const targetEntity =
+      org ||
+      (user.includes(',')
+        ? user
+            .split(',')
+            .map((u) => u.trim())
+            .slice(0, 2)
+            .join(' + ')
+        : user);
     const borderParam = searchParams.get('border');
     const sanitizedBorder = borderParam ? borderParam.replace(/[^a-fA-F0-9]/g, '') : undefined;
     const animate = searchParams.get('animate') !== 'false';
@@ -151,12 +202,17 @@ export async function GET(request: Request) {
       hideBackground: hide_background,
       hide_stats,
       lang,
-      view,
+      view: normalizedView,
       delta_format,
       width,
       height,
       size,
-      grace,
+
+      grace: Math.max(
+        0,
+        Math.min(7, typeof grace === 'number' ? grace : parseInt(String(grace || 1), 10))
+      ),
+
       mode,
       repo,
       org,
@@ -165,10 +221,18 @@ export async function GET(request: Request) {
       versus,
       shading,
       gradient,
-      opacity,
+      gradient_stops,
+      gradient_dir,
+
+      opacity: Math.max(
+        0.1,
+        Math.min(1.0, typeof opacity === 'number' ? opacity : parseFloat(String(opacity || 1.0)))
+      ),
+
       disable_particles,
       glow,
       animate,
+      badges,
     };
 
     let calendar;
@@ -182,6 +246,41 @@ export async function GET(request: Request) {
         to,
       });
       calendar = orgData.calendar;
+    } else if (user.includes(',')) {
+      const users = user
+        .split(',')
+        .map((u) => u.trim())
+        .filter(Boolean);
+      let lastError: unknown = null;
+      let hasOfflineFallback = false;
+      const fetchedCalendars = await Promise.all(
+        users.map(async (u) => {
+          try {
+            const userData = await fetchGitHubContributions(u, {
+              bypassCache: refresh,
+              from,
+              to,
+            });
+            if (userData.isOfflineFallback) {
+              hasOfflineFallback = true;
+            }
+            return userData.calendar;
+          } catch (err) {
+            lastError = err;
+            return null;
+          }
+        })
+      );
+      const successfulCalendars = fetchedCalendars.filter(
+        (c): c is ContributionCalendar => c !== null
+      );
+      if (successfulCalendars.length === 0) {
+        throw lastError || new Error('No successful calendars fetched');
+      }
+      calendar = aggregateCalendars(successfulCalendars);
+      if (hasOfflineFallback) {
+        params.isOfflineFallback = true;
+      }
     } else {
       const userData = await fetchGitHubContributions(user, {
         bypassCache: refresh,
@@ -189,6 +288,9 @@ export async function GET(request: Request) {
         to,
       });
       calendar = userData.calendar;
+      if (userData.isOfflineFallback) {
+        params.isOfflineFallback = true;
+      }
 
       if (versus) {
         const versusData = await fetchGitHubContributions(versus, {
@@ -197,7 +299,25 @@ export async function GET(request: Request) {
           to,
         });
         versusCalendar = versusData.calendar;
+        if (versusData.isOfflineFallback) {
+          params.isOfflineFallback = true;
+        }
       }
+    }
+
+    if (days && normalizedView !== 'monthly') {
+      const allDays = calendar.weeks.flatMap((w) => w.contributionDays);
+
+      const filteredDays = allDays.slice(-days);
+
+      calendar = {
+        totalContributions: filteredDays.reduce((sum, d) => sum + d.contributionCount, 0),
+        weeks: [
+          {
+            contributionDays: filteredDays,
+          },
+        ],
+      };
     }
 
     // ─── JSON output mode ──────────────────────────────────────────────────
@@ -216,38 +336,53 @@ export async function GET(request: Request) {
         ? 'no-cache, no-store, must-revalidate'
         : `public, s-maxage=${secondsToMidnight}, stale-while-revalidate=86400`;
 
-      return NextResponse.json(
-        {
-          user: targetEntity,
-          stats,
-          monthlyStats,
-          calendar: {
-            totalContributions: calendar.totalContributions,
-            weeks: calendar.weeks,
-          },
+      const jsonPayload = JSON.stringify({
+        user: targetEntity,
+        stats,
+        monthlyStats,
+        calendar: {
+          totalContributions: calendar.totalContributions,
+          weeks: calendar.weeks,
         },
-        {
+      });
+
+      const etag = crypto.createHash('sha1').update(jsonPayload).digest('hex');
+      const weakEtag = `W/"${etag}"`;
+      const ifNoneMatch = request.headers.get('if-none-match');
+
+      if (ifNoneMatch === weakEtag || ifNoneMatch === `"${etag}"`) {
+        return new NextResponse(null, {
+          status: 304,
           headers: {
             'Cache-Control': cacheControl,
-            'X-Cache-Status': refresh ? `BYPASS, fetched=${new Date().toISOString()}` : 'HIT',
+            ETag: weakEtag,
           },
-        }
-      );
+        });
+      }
+
+      return new NextResponse(jsonPayload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': cacheControl,
+          ETag: weakEtag,
+          'X-Cache-Status': refresh ? `BYPASS, fetched=${new Date().toISOString()}` : 'HIT',
+        },
+      });
     }
 
     // ─── SVG output mode (default) ──────────────────────────────────────────
     let svg = '';
-    if (view === 'monthly') {
+    if (normalizedView === 'monthly') {
       const stats = calculateMonthlyStats(
         calendar,
         timezone,
         getMonthlyReferenceDate(year, timezone)
       );
       svg = generateMonthlySVG(stats, params);
-    } else if (view === 'heatmap') {
+    } else if (normalizedView === 'heatmap') {
       const stats = calculateStreak(calendar, timezone, undefined, grace);
       svg = generateHeatmapSVG(stats, params, calendar);
-    } else if (view === 'pulse') {
+    } else if (normalizedView === 'pulse') {
       // We still use calculateStreak here to efficiently parse totalContributions for the stat display,
       // even though the sparkline generator will extract its own daily 30-day timeline below.
       const stats = calculateStreak(calendar, timezone, undefined, grace);
@@ -270,11 +405,26 @@ export async function GET(request: Request) {
         ? 'public, s-maxage=31536000, immutable'
         : `public, s-maxage=${secondsToMidnight}, stale-while-revalidate=86400`;
 
+    const etag = crypto.createHash('sha1').update(svg).digest('hex');
+    const weakEtag = `W/"${etag}"`;
+    const ifNoneMatch = request.headers.get('if-none-match');
+
+    if (ifNoneMatch === weakEtag || ifNoneMatch === `"${etag}"`) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          'Cache-Control': cacheControl,
+          ETag: weakEtag,
+        },
+      });
+    }
+
     return new NextResponse(svg, {
       headers: {
         'Content-Type': 'image/svg+xml',
         'Cache-Control': cacheControl,
         'Content-Security-Policy': SVG_CSP_HEADER,
+        ETag: weakEtag,
         'X-Cache-Status': refresh ? `BYPASS, fetched=${new Date().toISOString()}` : 'HIT',
       },
     });
@@ -287,6 +437,25 @@ type ParseResult = ReturnType<typeof streakParamsSchema.safeParse>;
 
 function buildErrorResponse(error: unknown, parseResult: ParseResult): NextResponse {
   const message = error instanceof Error ? error.message : String(error);
+  function buildInlineErrorSVG(text: string): string {
+    const MAX_LINE = 48;
+    const truncated = text.length > MAX_LINE * 2 ? text.slice(0, MAX_LINE * 2 - 1) + '…' : text;
+
+    const line1 = escapeSVGText(truncated.slice(0, MAX_LINE));
+    const line2 = truncated.length > MAX_LINE ? escapeSVGText(truncated.slice(MAX_LINE)) : null;
+
+    const textY = line2 ? '62' : '75';
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="150" viewBox="0 0 400 150">
+      <rect width="400" height="150" fill="#2d0000" rx="8"/>
+      <text x="200" y="${textY}" text-anchor="middle" dominant-baseline="central" fill="#ffcccc" font-family="sans-serif" font-size="13">${line1}</text>${
+        line2
+          ? `
+      <text x="200" y="91" text-anchor="middle" dominant-baseline="central" fill="#ffcccc" font-family="sans-serif" font-size="13">${line2}</text>`
+          : ''
+      }
+    </svg>`;
+  }
 
   const isNotFound =
     message.toLowerCase().includes('not found') ||
@@ -349,14 +518,7 @@ function buildErrorResponse(error: unknown, parseResult: ParseResult): NextRespo
 
   // 3. Return a 400 Bad Request for Validation Errors
   if (isValidationError) {
-    const validationSvg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="400" height="150">
-        <rect width="100%" height="100%" fill="#2d0000" rx="8"/>
-        <text x="50%" y="50%" text-anchor="middle" fill="#ffcccc" font-family="sans-serif">
-          ${escapeSVGText(message)}
-        </text>
-      </svg>
-    `;
+    const validationSvg = buildInlineErrorSVG(message);
 
     return new NextResponse(validationSvg, {
       status: 400,
@@ -371,14 +533,7 @@ function buildErrorResponse(error: unknown, parseResult: ParseResult): NextRespo
   // 4. Return a 500 Internal Server Error for real crashes
   console.error('[streak] Unhandled error:', message);
 
-  const errorSvg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="400" height="150">
-        <rect width="100%" height="100%" fill="#2d0000" rx="8"/>
-        <text x="50%" y="50%" text-anchor="middle" fill="#ffcccc" font-family="sans-serif">
-          Something went wrong. Please try again later.
-        </text>
-      </svg>
-    `;
+  const errorSvg = buildInlineErrorSVG('Something went wrong. Please try again later.');
 
   return new NextResponse(errorSvg, {
     status: 500,
