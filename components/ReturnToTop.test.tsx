@@ -13,7 +13,18 @@ vi.mock('framer-motion', () => ({
     div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
       <div {...props}>{children}</div>
     ),
+    circle: (props: { [key: string]: unknown }) => <circle {...props} />,
+    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
+      <div {...props}>{children}</div>
+    ),
+    span: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
+      <span {...props}>{children}</span>
+    ),
   },
+  useReducedMotion: () => false,
+  useScroll: () => ({ scrollYProgress: 0 }),
+  useSpring: (value: unknown) => value,
+  useTransform: () => 0,
 }));
 
 vi.mock('lucide-react', () => ({
@@ -46,7 +57,7 @@ describe('ReturnToTop', () => {
   it('does not render when not at bottom of page', () => {
     render(<ReturnToTop />);
 
-    expect(screen.queryByRole('button', { name: /return to top/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /back to top/i })).toBeNull();
   });
 
   // Test 2: 'Return to top' aria-label is on the button when visible
@@ -60,7 +71,7 @@ describe('ReturnToTop', () => {
 
     fireEvent.scroll(window);
 
-    expect(screen.getByRole('button', { name: /return to top/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /back to top/i })).toBeTruthy();
   });
 
   // Test 3: Clicking the button calls window.scrollTo
@@ -76,7 +87,7 @@ describe('ReturnToTop', () => {
 
     fireEvent.scroll(window);
 
-    fireEvent.click(screen.getByRole('button', { name: /return to top/i }));
+    fireEvent.click(screen.getByRole('button', { name: /back to top/i }));
 
     expect(scrollToSpy).toHaveBeenCalledWith({
       top: 0,
