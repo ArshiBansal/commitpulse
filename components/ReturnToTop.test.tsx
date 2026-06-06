@@ -23,7 +23,6 @@ export default function ReturnToTop() {
     mass: 0.2,
   });
 
-  // SVG ring values
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
 
