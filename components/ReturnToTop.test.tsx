@@ -28,7 +28,6 @@ export default function ReturnToTop() {
   const circumference = 2 * Math.PI * radius;
 
   const strokeDashoffset = useTransform(smoothScrollProgress, [0, 1], [circumference, 0]);
-  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     const updateVisibility = () => {
