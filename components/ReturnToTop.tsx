@@ -50,12 +50,6 @@ export default function ReturnToTop() {
     });
   };
 
-  // SVG ring values
-  const radius = 24;
-  const circumference = 2 * Math.PI * radius;
-
-  const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
-
   return (
     <AnimatePresence>
       {isVisible && (
