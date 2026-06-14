@@ -2,7 +2,7 @@
 
 import crypto from 'crypto';
 import { NextResponse } from 'next/server';
-import { fetchGitHubContributions, getOrgDashboardData } from '@/lib/github';
+import { fetchGitHubContributions, getOrgDashboardData, getCircuitTelemetry } from '@/lib/github';
 import {
   calculateStreak,
   calculateMonthlyStats,
@@ -21,6 +21,7 @@ import {
   generateLanguagesSVG,
 } from '@/lib/svg/generator';
 import { generateConstellationSVG } from '@/lib/svg/constellation';
+import { generateRadarSVG } from '@/lib/svg/radar';
 import { getSecondsUntilUTCMidnight, getSecondsUntilMidnightInTimezone } from '@/utils/time';
 import type { BadgeParams, RepoContribution, ExtendedContributionData } from '@/types';
 import { themes } from '@/lib/svg/themes';
@@ -124,7 +125,8 @@ export async function GET(request: Request) {
       | 'pulse'
       | 'skyline'
       | 'languages'
-      | 'constellation';
+      | 'constellation'
+      | 'radar';
     const themeName = theme || 'dark';
 
     // Treat either ?refresh=true or ?bypassCache=true as a cache-bypass request
@@ -460,6 +462,9 @@ export async function GET(request: Request) {
     } else if (normalizedView === 'constellation') {
       const stats = calculateStreak(calendar, timezone, undefined, grace);
       svg = generateConstellationSVG(stats, params, calendar);
+    } else if (normalizedView === 'radar') {
+      const stats = calculateStreak(calendar, timezone, undefined, grace);
+      svg = generateRadarSVG(stats, params, calendar);
     } else if (versus && versusCalendar) {
       const stats1 = calculateStreak(calendar, timezone, undefined, grace);
       const stats2 = calculateStreak(versusCalendar, timezone, undefined, grace);
@@ -478,7 +483,7 @@ export async function GET(request: Request) {
         ? 'public, s-maxage=31536000, immutable'
         : `public, s-maxage=${secondsToMidnight}, stale-while-revalidate=86400`;
 
-    const etag = crypto.createHash('sha1').update(svg).digest('hex');
+    const etag = crypto.createHash('sha256').update(svg).digest('hex');
     const weakEtag = `W/"${etag}"`;
     const ifNoneMatch = request.headers.get('if-none-match');
 
@@ -559,14 +564,24 @@ function buildErrorResponse(error: unknown, parseResult: ParseResult): NextRespo
   const errSpeed = (parseResult.success && parseResult.data.speed) || '8s';
 
   if (isRateLimit) {
-    const svg = generateRateLimitSVG(errBg, errAccent, errText, errRadius, errSpeed);
+    const telemetry = getCircuitTelemetry();
+    const isCircuitOpen = telemetry.isOpen;
+    const svg = generateRateLimitSVG(errBg, errAccent, errText, errRadius, errSpeed, isCircuitOpen);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Content-Security-Policy': SVG_CSP_HEADER,
+    };
+
+    if (isCircuitOpen) {
+      headers['X-CommitPulse-Circuit-Status'] = 'Open';
+      headers['X-CommitPulse-Circuit-Reset-In'] = String(telemetry.resetInMs);
+    }
+
     return new NextResponse(svg, {
       status: 429,
-      headers: {
-        'Content-Type': 'image/svg+xml',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Content-Security-Policy': SVG_CSP_HEADER,
-      },
+      headers,
     });
   }
 
