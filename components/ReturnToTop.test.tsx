@@ -1,136 +1,173 @@
-'use client';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import ReturnToTop from './ReturnToTop';
 
-import { useEffect, useState } from 'react';
-import {
-  AnimatePresence,
-  motion,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-} from 'framer-motion';
-import { ChevronUp } from 'lucide-react';
+describe('ReturnToTop', () => {
+  beforeEach(() => {
+    // Mock window.scrollY
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 0,
+    });
 
-export default function ReturnToTop() {
-  const [isVisible, setIsVisible] = useState(false);
-  const shouldReduceMotion = useReducedMotion();
-
-  const { scrollYProgress } = useScroll();
-
-  const smoothScrollProgress = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 24,
-    mass: 0.2,
+    // Mock window.scrollTo
+    window.scrollTo = vi.fn();
   });
 
-  const radius = 24;
-  const circumference = 2 * Math.PI * radius;
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-  const strokeDashoffset = useTransform(smoothScrollProgress, [0, 1], [circumference, 0]);
+  it('should not render button when scroll position is less than 300px', () => {
+    render(<ReturnToTop />);
 
-  useEffect(() => {
-    const updateVisibility = () => {
-      setIsVisible(window.scrollY > 300);
-    };
+    const button = screen.queryByLabelText('Back to top');
+    expect(button).not.toBeInTheDocument();
+  });
 
-    updateVisibility();
-
-    window.addEventListener('scroll', updateVisibility, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', updateVisibility);
-    };
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: shouldReduceMotion ? 'auto' : 'smooth',
+  it('should render button when scroll position exceeds 300px', () => {
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 400,
     });
-  };
 
-  return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 18, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 18, scale: 0.96 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
-          className="fixed bottom-6 right-6 z-50 sm:bottom-8 sm:right-8"
-        >
-          <motion.button
-            type="button"
-            onClick={scrollToTop}
-            whileHover={shouldReduceMotion ? undefined : { y: -2 }}
-            whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
-            aria-label="Back to top"
-            className="
-              group relative flex h-14 w-14 items-center justify-center rounded-full
-              border border-violet-400/45 bg-zinc-950/80 text-violet-300
-              shadow-[0_0_24px_rgba(167,139,250,0.16)]
-              backdrop-blur-md transition-all duration-200
-              hover:border-violet-300 hover:bg-violet-950/35 hover:text-violet-200
-              hover:shadow-[0_0_28px_rgba(167,139,250,0.28)]
-              active:translate-y-0
-              focus-visible:outline focus-visible:outline-2
-              focus-visible:outline-offset-4 focus-visible:outline-violet-400
-            "
-          >
-            {!shouldReduceMotion && (
-              <span className="absolute inset-0 rounded-full border border-violet-400/35 opacity-70 animate-ping" />
-            )}
+    render(<ReturnToTop />);
 
-            <svg
-              aria-hidden="true"
-              width="58"
-              height="58"
-              viewBox="0 0 58 58"
-              className="absolute -rotate-90"
-            >
-              <circle
-                cx="29"
-                cy="29"
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-violet-400/15"
-              />
+    // Trigger scroll event
+    fireEvent.scroll(window);
 
-              <motion.circle
-                cx="29"
-                cy="29"
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                style={{ strokeDashoffset }}
-                className="text-violet-300"
-              />
-            </svg>
+    const button = screen.queryByLabelText('Back to top');
+    expect(button).toBeInTheDocument();
+  });
 
-            <motion.span
-              aria-hidden="true"
-              animate={shouldReduceMotion ? undefined : { y: [0, -3, 0] }}
-              transition={{
-                duration: 1.6,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-              className="relative z-10"
-            >
-              <ChevronUp
-                size={23}
-                strokeWidth={2.4}
-                className="transition-transform duration-200 group-hover:-translate-y-0.5"
-              />
-            </motion.span>
-          </motion.button>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
+  it('should call scrollTo with smooth behavior when button is clicked', () => {
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 400,
+    });
+
+    render(<ReturnToTop />);
+    fireEvent.scroll(window);
+
+    const button = screen.getByLabelText('Back to top');
+    fireEvent.click(button);
+
+    expect(window.scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      behavior: 'smooth',
+    });
+  });
+
+  it('should have correct accessibility attributes', () => {
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 400,
+    });
+
+    render(<ReturnToTop />);
+    fireEvent.scroll(window);
+
+    const button = screen.getByLabelText('Back to top');
+    expect(button).toHaveAttribute('type', 'button');
+    expect(button).toHaveAttribute('aria-label', 'Back to top');
+  });
+
+  it('should have fixed positioning classes', () => {
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 400,
+    });
+
+    render(<ReturnToTop />);
+    fireEvent.scroll(window);
+
+    const container = screen.getByLabelText('Back to top').closest('div[class*="fixed"]');
+    expect(container).toHaveClass('fixed', 'bottom-6', 'right-6', 'z-50');
+  });
+
+  it('should update visibility on scroll events', () => {
+    const { rerender } = render(<ReturnToTop />);
+
+    // Initially not visible
+    expect(screen.queryByLabelText('Back to top')).not.toBeInTheDocument();
+
+    // Simulate scroll below 300px
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 150,
+    });
+    fireEvent.scroll(window);
+    rerender(<ReturnToTop />);
+    expect(screen.queryByLabelText('Back to top')).not.toBeInTheDocument();
+
+    // Simulate scroll above 300px
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 500,
+    });
+    fireEvent.scroll(window);
+    rerender(<ReturnToTop />);
+    expect(screen.getByLabelText('Back to top')).toBeInTheDocument();
+  });
+
+  it('should render chevron up icon', () => {
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 400,
+    });
+
+    render(<ReturnToTop />);
+    fireEvent.scroll(window);
+
+    const button = screen.getByLabelText('Back to top');
+    // The ChevronUp icon should be present as a child element
+    expect(button.querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('should cleanup scroll event listener on unmount', () => {
+    const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+
+    const { unmount } = render(<ReturnToTop />);
+
+    unmount();
+
+    expect(removeEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+    removeEventListenerSpy.mockRestore();
+  });
+
+  it('should have correct styling classes on button', () => {
+    Object.defineProperty(window, 'scrollY', {
+      writable: true,
+      configurable: true,
+      value: 400,
+    });
+
+    render(<ReturnToTop />);
+    fireEvent.scroll(window);
+
+    const button = screen.getByLabelText('Back to top');
+    expect(button).toHaveClass(
+      'group',
+      'relative',
+      'flex',
+      'h-14',
+      'w-14',
+      'items-center',
+      'justify-center',
+      'rounded-full',
+      'border',
+      'border-violet-400/45',
+      'bg-zinc-950/80',
+      'text-violet-300'
+    );
+  });
+});
