@@ -68,6 +68,8 @@ export function Footer() {
     { label: t('footer.compare'), href: '/compare', isExternal: false },
     { label: t('footer.customization'), href: '/customize', isExternal: false },
     { label: t('footer.contributors'), href: '/contributors', isExternal: false },
+    // FAQ added here (most suitable in Navigation)
+    { label: t('footer.faq') || 'FAQ', href: '/faq', isExternal: false },
   ];
 
   const resourceLinks: FooterLink[] = [
@@ -128,7 +130,6 @@ export function Footer() {
           </div>
 
           {/* Navigation Section */}
-
           <div className="flex flex-col items-center sm:items-start">
             <h3 className="font-semibold text-sm text-black dark:text-white mb-3">
               {t('footer.navigation')}
@@ -148,7 +149,6 @@ export function Footer() {
           </div>
 
           {/* Resources Section */}
-
           <div className="flex flex-col items-center sm:items-start">
             <h3 className="font-semibold text-sm text-black dark:text-white mb-3">
               {t('footer.resources')}
@@ -168,7 +168,6 @@ export function Footer() {
           </div>
 
           {/* Connect Section */}
-
           <div className="flex flex-col items-center sm:items-start">
             <h3 className="font-semibold text-sm text-black dark:text-white mb-3">
               {t('footer.connect')}
