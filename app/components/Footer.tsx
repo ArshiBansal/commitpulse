@@ -67,9 +67,8 @@ export function Footer() {
     { label: t('footer.generator'), href: '/generator', isExternal: false },
     { label: t('footer.compare'), href: '/compare', isExternal: false },
     { label: t('footer.customization'), href: '/customize', isExternal: false },
+    { label: t('footer.faq'), href: '/faq', isExternal: false },
     { label: t('footer.contributors'), href: '/contributors', isExternal: false },
-    // FAQ added here (most suitable in Navigation)
-    { label: t('footer.faq') || 'FAQ', href: '/faq', isExternal: false },
   ];
 
   const resourceLinks: FooterLink[] = [
