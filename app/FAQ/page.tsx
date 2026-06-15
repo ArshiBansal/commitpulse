@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useTranslation } from '@/context/TranslationContext';
 import Link from 'next/link';
 
-interface faqItem {
+interface FAQItem {
   question: string;
   answer: string;
 }
 
-export default function faq() {
+export default function FAQ() {
   const { t } = useTranslation();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -17,7 +17,7 @@ export default function faq() {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  const faqs: faqItem[] = [
+  const faqs: FAQItem[] = [
     {
       question: t('faq.q1') || 'What is CommitPulse?',
       answer:
