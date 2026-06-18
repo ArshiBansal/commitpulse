@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion, useReducedMotion } from 'framer-motion';
-import Link from 'next/link'; // ← Added for CTA
+import Link from 'next/link';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -184,7 +184,6 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   const glowRef = useRef<HTMLDivElement>(null);
   const isHoveredRef = useRef(false);
 
-  /* Magnetic 3D tilt + cursor spotlight on hover */
   useEffect(() => {
     const card = cardRef.current;
     const glow = glowRef.current;
@@ -251,7 +250,6 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       className="relative flex-shrink-0 w-[340px] cursor-pointer select-none"
       style={{ transformStyle: 'preserve-3d' }}
     >
-      {/* Hover glow accent line at top */}
       <div
         className="absolute top-0 left-[10%] right-[10%] h-[2px] rounded-full opacity-0 transition-opacity duration-500"
         style={{
@@ -260,7 +258,6 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       />
 
       <div className="group relative overflow-hidden rounded-2xl border border-black/5 bg-white/70 p-6 shadow-lg shadow-black/5 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#0c0c0c]/90 dark:shadow-2xl dark:shadow-black/40 transition-all duration-300 hover:border-black/10 dark:hover:border-white/15">
-        {/* Spotlight glow */}
         <div
           ref={glowRef}
           className="absolute pointer-events-none rounded-full"
@@ -276,15 +273,12 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           }}
         />
 
-        {/* Background gradient blob */}
         <div
           className="absolute -right-16 -top-16 h-32 w-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150"
           style={{ background: `${testimonial.accentColor}10` }}
         />
 
-        {/* Header: Avatar + Name + Handle */}
         <div className="relative z-10 flex items-start gap-3.5 mb-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={testimonial.avatar}
             alt={testimonial.name}
@@ -295,7 +289,6 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
               <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                 {testimonial.name}
               </p>
-              {/* Verified badge */}
               <svg
                 width="14"
                 height="14"
@@ -321,17 +314,14 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           </div>
         </div>
 
-        {/* Stars */}
         <div className="relative z-10 mb-3">
           <StarRating />
         </div>
 
-        {/* Message */}
         <p className="relative z-10 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
           &ldquo;{testimonial.message}&rdquo;
         </p>
 
-        {/* Bottom accent line */}
         <div
           className="absolute bottom-0 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-700 ease-out"
           style={{
@@ -363,9 +353,8 @@ function MarqueeRow({
     const track = trackRef.current;
     if (!track) return;
 
-    // Wait for fonts / images to settle
     const timeoutId = setTimeout(() => {
-      const totalWidth = track.scrollWidth / 2; // we duplicated the content
+      const totalWidth = track.scrollWidth / 2;
 
       gsap.set(track, { x: direction === 'left' ? 0 : -totalWidth });
 
@@ -383,7 +372,6 @@ function MarqueeRow({
     };
   }, [direction, speed, shouldReduceMotion]);
 
-  /* Pause on hover for readability */
   const handleMouseEnter = () => {
     if (tweenRef.current) {
       gsap.to(tweenRef.current, { timeScale: 0, duration: 0.5, ease: 'power2.out' });
@@ -396,7 +384,6 @@ function MarqueeRow({
     }
   };
 
-  // Duplicate cards for seamless infinite loop
   const cards = [...testimonials, ...testimonials];
 
   return (
@@ -405,7 +392,6 @@ function MarqueeRow({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Fade edges */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-24 bg-gradient-to-r from-white dark:from-[#050505] to-transparent" />
       <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-24 bg-gradient-to-l from-white dark:from-[#050505] to-transparent" />
 
@@ -445,13 +431,7 @@ function FloatingOrb({
       duration: 'random(4, 7)',
       ease: 'sine.inOut',
     });
-    return () => {
-      try {
-        tl?.kill?.();
-      } catch {
-        // ignore cleanup errors in test environment
-      }
-    };
+    return () => tl?.kill?.();
   }, [delay]);
 
   return (
@@ -471,184 +451,6 @@ function FloatingOrb({
   );
 }
 
-/* ─── Main Wall of Love Section ─── */
-export function WallOfLove() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const headingRef = useRef<HTMLDivElement>(null);
-  const subheadingRef = useRef<HTMLParagraphElement>(null);
-  const badgeRef = useRef<HTMLDivElement>(null);
-  const row1Ref = useRef<HTMLDivElement>(null);
-  const row2Ref = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
-
-  /* ── GSAP scroll-triggered entrance animations ── */
-  useEffect(() => {
-    if (
-      !sectionRef.current ||
-      !headingRef.current ||
-      !subheadingRef.current ||
-      !badgeRef.current ||
-      !row1Ref.current ||
-      !row2Ref.current ||
-      !statsRef.current
-    )
-      return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top 80%',
-          toggleActions: 'play none none reverse',
-        },
-      });
-
-      // Badge entrance
-      tl.fromTo(
-        badgeRef.current,
-        { y: 30, opacity: 0, scale: 0.8 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(2)' }
-      );
-
-      // Heading entrance with text reveal
-      tl.fromTo(
-        headingRef.current,
-        { y: 50, opacity: 0, clipPath: 'inset(0 0 100% 0)' },
-        {
-          y: 0,
-          opacity: 1,
-          clipPath: 'inset(0 0 0% 0)',
-          duration: 0.8,
-          ease: 'power3.out',
-        },
-        '-=0.3'
-      );
-
-      // Subheading fade in
-      tl.fromTo(
-        subheadingRef.current,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' },
-        '-=0.4'
-      );
-
-      // Row 1 slide in
-      tl.fromTo(
-        row1Ref.current,
-        { y: 60, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' },
-        '-=0.3'
-      );
-
-      // Row 2 slide in
-      tl.fromTo(
-        row2Ref.current,
-        { y: 60, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' },
-        '-=0.5'
-      );
-
-      // Stats counter entrance
-      tl.fromTo(
-        statsRef.current,
-        { y: 30, opacity: 0, scale: 0.95 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power3.out' },
-        '-=0.4'
-      );
-    });
-
-    return () => ctx.revert();
-  }, []);
-
-  return (
-    <section ref={sectionRef} className="relative py-24 -mx-6 overflow-hidden">
-      {/* ── Background Decorations ── */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-emerald-500/[0.03] blur-[120px]" />
-        <div className="absolute -left-[5%] top-[20%] h-[300px] w-[300px] rounded-full bg-purple-500/[0.03] blur-[100px]" />
-        <div className="absolute -right-[5%] bottom-[10%] h-[350px] w-[350px] rounded-full bg-cyan-500/[0.03] blur-[100px]" />
-      </div>
-
-      {/* Floating orbs */}
-      <FloatingOrb color="#10b981" size={200} left="5%" top="15%" delay={0} />
-      <FloatingOrb color="#8b5cf6" size={160} left="80%" top="25%" delay={1.5} />
-      <FloatingOrb color="#06b6d4" size={180} left="50%" top="70%" delay={3} />
-
-      {/* ── Section Header ── */}
-      <div className="text-center mb-16 px-6">
-        {/* Badge */}
-        <div ref={badgeRef} className="inline-block mb-6" style={{ opacity: 0 }}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-sm dark:border-white/10 dark:bg-[#0a0a0a]/80 dark:text-white/70">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" />
-            </span>
-            Loved by developers worldwide
-          </div>
-        </div>
-
-        {/* Heading */}
-        <div ref={headingRef} style={{ opacity: 0 }}>
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4">
-            <span className="bg-gradient-to-br from-gray-900 via-black to-gray-600 dark:from-white dark:via-gray-100 dark:to-gray-500 bg-clip-text text-transparent">
-              Wall of{' '}
-            </span>
-            <span className="bg-gradient-to-r from-rose-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
-              Love
-            </span>
-            <span className="inline-block ml-2 text-4xl md:text-6xl animate-pulse">💜</span>
-          </h2>
-        </div>
-
-        {/* Subheading */}
-        <p
-          ref={subheadingRef}
-          className="mx-auto max-w-xl text-sm sm:text-base leading-relaxed text-gray-500 dark:text-white/55"
-          style={{ opacity: 0 }}
-        >
-          See what developers are saying about CommitPulse. Real feedback from real builders who
-          elevated their GitHub profiles.
-        </p>
-      </div>
-
-      {/* ── Marquee Rows ── */}
-      <div className="space-y-5">
-        <div ref={row1Ref} style={{ opacity: 0 }}>
-          <MarqueeRow testimonials={TESTIMONIALS_ROW_1} direction="left" speed={40} />
-        </div>
-        <div ref={row2Ref} style={{ opacity: 0 }}>
-          <MarqueeRow testimonials={TESTIMONIALS_ROW_2} direction="right" speed={45} />
-        </div>
-      </div>
-
-      {/* ── Stats Bar ── */}
-      <div ref={statsRef} className="mt-16 px-6" style={{ opacity: 0 }}>
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border border-black/5 bg-white/60 backdrop-blur-xl shadow-lg shadow-black/5 dark:border-white/[0.08] dark:bg-[#0a0a0a]/80 dark:shadow-2xl dark:shadow-black/40">
-            <div className="grid grid-cols-3 divide-x divide-black/5 dark:divide-white/[0.06]">
-              <StatItem value="2K+" label="Happy Developers" color="#10b981" />
-              <StatItem value="50K+" label="Badges Generated" color="#8b5cf6" />
-              <StatItem value="4.9" label="Average Rating" color="#f59e0b" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── CTA Button for Review Form ── */}
-      <div className="mt-16 flex justify-center px-6">
-        <Link
-          href="/reviewform"
-          className="group relative inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-purple-600 to-pink-600 px-10 py-4 text-lg font-semibold text-white shadow-xl shadow-purple-500/30 transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95 overflow-hidden"
-        >
-          <span>Share Your Experience</span>
-          <span className="text-2xl transition-transform group-hover:translate-x-1">→</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-[200%] transition-transform duration-700" />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
 /* ─── Stat Item ─── */
 function StatItem({ value, label, color }: { value: string; label: string; color: string }) {
   const valueRef = useRef<HTMLParagraphElement>(null);
@@ -656,14 +458,14 @@ function StatItem({ value, label, color }: { value: string; label: string; color
 
   useEffect(() => {
     if (!valueRef.current || typeof window === 'undefined' || !('IntersectionObserver' in window)) {
-      setIsVisible(true); // fallback: show immediately in test/SSR env
+      setIsVisible(true);
       return;
     }
 
-    const observer = new IntersectionObserver((entries, obs) => {
+    const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         setIsVisible(true);
-        obs.disconnect();
+        observer.disconnect();
       }
     });
 
@@ -673,7 +475,6 @@ function StatItem({ value, label, color }: { value: string; label: string; color
 
   return (
     <div className="group relative px-4 py-6 text-center transition-colors duration-300 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
-      {/* Glow on hover */}
       <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
@@ -700,5 +501,174 @@ function StatItem({ value, label, color }: { value: string; label: string; color
         {label}
       </motion.p>
     </div>
+  );
+}
+
+/* ─── Main Wall of Love Section ─── */
+export function WallOfLove() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
+  const subheadingRef = useRef<HTMLParagraphElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const row1Ref = useRef<HTMLDivElement>(null);
+  const row2Ref = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (
+      !sectionRef.current ||
+      !headingRef.current ||
+      !subheadingRef.current ||
+      !badgeRef.current ||
+      !row1Ref.current ||
+      !row2Ref.current ||
+      !statsRef.current
+    )
+      return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse',
+        },
+      });
+
+      tl.fromTo(
+        badgeRef.current,
+        { y: 30, opacity: 0, scale: 0.8 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(2)' }
+      );
+
+      tl.fromTo(
+        headingRef.current,
+        { y: 50, opacity: 0, clipPath: 'inset(0 0 100% 0)' },
+        {
+          y: 0,
+          opacity: 1,
+          clipPath: 'inset(0 0 0% 0)',
+          duration: 0.8,
+          ease: 'power3.out',
+        },
+        '-=0.3'
+      );
+
+      tl.fromTo(
+        subheadingRef.current,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' },
+        '-=0.4'
+      );
+
+      tl.fromTo(
+        row1Ref.current,
+        { y: 60, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' },
+        '-=0.3'
+      );
+
+      tl.fromTo(
+        row2Ref.current,
+        { y: 60, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' },
+        '-=0.5'
+      );
+
+      tl.fromTo(
+        statsRef.current,
+        { y: 30, opacity: 0, scale: 0.95 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power3.out' },
+        '-=0.4'
+      );
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section ref={sectionRef} className="relative py-24 -mx-6 overflow-hidden">
+      {/* Background Decorations */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-emerald-500/[0.03] blur-[120px]" />
+        <div className="absolute -left-[5%] top-[20%] h-[300px] w-[300px] rounded-full bg-purple-500/[0.03] blur-[100px]" />
+        <div className="absolute -right-[5%] bottom-[10%] h-[350px] w-[350px] rounded-full bg-cyan-500/[0.03] blur-[100px]" />
+      </div>
+
+      {/* Floating Orbs */}
+      <FloatingOrb color="#10b981" size={200} left="5%" top="15%" delay={0} />
+      <FloatingOrb color="#8b5cf6" size={160} left="80%" top="25%" delay={1.5} />
+      <FloatingOrb color="#06b6d4" size={180} left="50%" top="70%" delay={3} />
+
+      {/* Section Header */}
+      <div className="text-center mb-16 px-6">
+        <div ref={badgeRef} className="inline-block mb-6" style={{ opacity: 0 }}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-sm dark:border-white/10 dark:bg-[#0a0a0a]/80 dark:text-white/70">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" />
+            </span>
+            Loved by developers worldwide
+          </div>
+        </div>
+
+        <div ref={headingRef} style={{ opacity: 0 }}>
+          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4">
+            <span className="bg-gradient-to-br from-gray-900 via-black to-gray-600 dark:from-white dark:via-gray-100 dark:to-gray-500 bg-clip-text text-transparent">
+              Wall of{' '}
+            </span>
+            <span className="bg-gradient-to-r from-rose-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
+              Love
+            </span>
+            <span className="inline-block ml-2 text-4xl md:text-6xl animate-pulse">💜</span>
+          </h2>
+        </div>
+
+        <p
+          ref={subheadingRef}
+          className="mx-auto max-w-xl text-sm sm:text-base leading-relaxed text-gray-500 dark:text-white/55"
+          style={{ opacity: 0 }}
+        >
+          See what developers are saying about CommitPulse. Real feedback from real builders who
+          elevated their GitHub profiles.
+        </p>
+      </div>
+
+      {/* Marquee Rows */}
+      <div className="space-y-5">
+        <div ref={row1Ref} style={{ opacity: 0 }}>
+          <MarqueeRow testimonials={TESTIMONIALS_ROW_1} direction="left" speed={40} />
+        </div>
+        <div ref={row2Ref} style={{ opacity: 0 }}>
+          <MarqueeRow testimonials={TESTIMONIALS_ROW_2} direction="right" speed={45} />
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div ref={statsRef} className="mt-16 px-6" style={{ opacity: 0 }}>
+        <div className="mx-auto max-w-3xl">
+          <div className="rounded-2xl border border-black/5 bg-white/60 backdrop-blur-xl shadow-lg shadow-black/5 dark:border-white/[0.08] dark:bg-[#0a0a0a]/80 dark:shadow-2xl dark:shadow-black/40">
+            <div className="grid grid-cols-3 divide-x divide-black/5 dark:divide-white/[0.06]">
+              <StatItem value="2K+" label="Happy Developers" color="#10b981" />
+              <StatItem value="50K+" label="Badges Generated" color="#8b5cf6" />
+              <StatItem value="4.9" label="Average Rating" color="#f59e0b" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Button - Linked to /reviewform */}
+      <div className="mt-16 flex justify-center px-6">
+        <Link
+          href="/reviewform"
+          prefetch={true}
+          className="group relative inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-purple-600 to-pink-600 px-10 py-4 text-lg font-semibold text-white shadow-xl shadow-purple-500/30 transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95 overflow-hidden"
+        >
+          <span>Share Your Experience</span>
+          <span className="text-2xl transition-transform group-hover:translate-x-1">→</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-[200%] transition-transform duration-700" />
+        </Link>
+      </div>
+    </section>
   );
 }
