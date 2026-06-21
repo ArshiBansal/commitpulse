@@ -85,11 +85,13 @@ const NAV_ICON_MAP: Record<string, React.ReactNode> = {
   '/compare': <GitCompare size={15} className="shrink-0" />,
   '/customize': <Sliders size={15} className="shrink-0" />,
   '/contributors': <Users size={15} className="shrink-0" />,
+  '/support': <MessageCircle size={15} className="shrink-0" />,
 };
 
 const RESOURCE_ICON_MAP: Record<string, React.ReactNode> = {
   documentation: <BookOpen size={15} className="shrink-0" />,
   github_repo: <GitBranch size={15} className="shrink-0" />,
+  guidelines: <BookOpen size={15} className="shrink-0" />, // Added
 };
 
 export function Footer() {
@@ -103,6 +105,7 @@ export function Footer() {
     { label: t('footer.customization'), href: '/customize', isExternal: false },
     { label: t('footer.faq'), href: '/faq', isExternal: false },
     { label: t('footer.contributors'), href: '/contributors', isExternal: false },
+    { label: t('footer.support'), href: '/support', isExternal: false },
   ];
 
   const resourceLinks: FooterLink[] = [
@@ -115,6 +118,11 @@ export function Footer() {
       label: t('footer.github_repo'),
       href: 'https://github.com/JhaSourav07/commitpulse',
       isExternal: true,
+    },
+    {
+      label: t('footer.guidelines'), // Added
+      href: '/guidelines',
+      isExternal: false,
     },
   ];
 
@@ -200,7 +208,11 @@ export function Footer() {
                   <span className="flex items-center gap-2">
                     {
                       RESOURCE_ICON_MAP[
-                        link.href.includes('README') ? 'documentation' : 'github_repo'
+                        link.href.includes('README')
+                          ? 'documentation'
+                          : link.href.includes('guidelines')
+                            ? 'guidelines'
+                            : 'github_repo'
                       ]
                     }
                     {link.label}
