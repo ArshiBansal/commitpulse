@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/context/TranslationContext';
-import { HelpCircle, ChevronDown, Search, Sparkles } from 'lucide-react';
+import { ChevronDown, Search, Sparkles } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -90,7 +90,7 @@ export default function FAQPage() {
         faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
         faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, faqs]);
 
   const toggleFAQ = (id: number) => {
     setOpenIndex(openIndex === id ? null : id);
@@ -124,7 +124,7 @@ export default function FAQPage() {
               </h1>
 
               <p className="mt-6 text-xl text-zinc-600 dark:text-zinc-400 max-w-md">
-                Find answers to common questions about CommitPulse. Can’t find what you’re looking
+                Find answers to common questions about CommitPulse. Can't find what you're looking
                 for? Reach out to us.
               </p>
             </div>
@@ -158,6 +158,7 @@ export default function FAQPage() {
                 <a
                   href="https://github.com/JhaSourav07/commitpulse"
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 rounded-full font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   GitHub Discussions
