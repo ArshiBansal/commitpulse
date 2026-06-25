@@ -1,168 +1,225 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslation } from '@/context/TranslationContext';
-import Link from 'next/link';
+import { HelpCircle, ChevronDown, Search, Sparkles } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FAQItem {
+  id: number;
   question: string;
   answer: string;
+  category?: string;
 }
 
-export default function FAQ() {
+export default function FAQPage() {
   const { t } = useTranslation();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
+  const [searchQuery, setSearchQuery] = useState('');
 
   const faqs: FAQItem[] = [
     {
+      id: 1,
       question: t('faq.q1') || 'What is CommitPulse?',
       answer:
         t('faq.a1') ||
-        'CommitPulse is an intelligent AI-powered commit message generator that helps developers write clear, consistent, and professional commit messages following conventional commit standards.',
+        'CommitPulse is an intelligent AI-powered commit message generator that helps developers write clear, professional, and standardized commit messages in seconds.',
+      category: 'General',
     },
     {
-      question: t('faq.q2') || 'How does CommitPulse work?',
+      id: 2,
+      question: t('faq.q2') || 'How does the AI generate commit messages?',
       answer:
         t('faq.a2') ||
-        'Simply paste your code changes or describe what you did, and our AI will generate multiple high-quality commit message options for you instantly.',
+        'It analyzes your code diff, understands the changes, and generates Conventional Commit formatted messages with appropriate type, scope, and emoji (if enabled).',
+      category: 'How it Works',
     },
     {
-      question: t('faq.q3') || 'Is CommitPulse free to use?',
+      id: 3,
+      question: t('faq.q3') || 'Is CommitPulse completely free?',
       answer:
         t('faq.a3') ||
-        'Yes! CommitPulse is completely free for personal and commercial use. We also offer optional premium features for power users in the future.',
+        'Yes! The tool is 100% free, open source, and requires no API keys or sign-up.',
+      category: 'Pricing',
     },
     {
+      id: 4,
       question: t('faq.q4') || 'What commit conventions does it support?',
       answer:
         t('faq.a4') ||
-        'We primarily follow the Conventional Commits specification (feat, fix, docs, style, refactor, perf, test, build, ci, chore, etc.) and also support Angular, Semantic Versioning, and Gitmoji conventions.',
+        'It follows Conventional Commits standard and can adapt to Angular, Semantic Versioning, and custom team conventions.',
+      category: 'Features',
     },
     {
-      question: t('faq.q5') || 'Can I customize the generated messages?',
+      id: 5,
+      question: t('faq.q5') || 'Can I customize the output style?',
       answer:
         t('faq.a5') ||
-        'Absolutely! Go to the Customization page to set your preferred commit style, tone, emoji usage, length preferences, and more.',
+        'Absolutely. On the Customize page you can control tone, length, emoji usage, capitalization, and preferred commit types.',
+      category: 'Features',
     },
     {
-      question: t('faq.q6') || 'Does it support multiple languages?',
+      id: 6,
+      question: t('faq.q6') || 'Do you store my code?',
       answer:
         t('faq.a6') ||
-        'Yes. CommitPulse supports commit messages in many languages including English, Spanish, French, German, Hindi, Portuguese, Chinese, and more.',
+        'No. Everything runs locally in your browser. Your code is never sent to any server.',
+      category: 'Privacy',
     },
     {
-      question: t('faq.q7') || 'How accurate is the AI?',
+      id: 7,
+      question: t('faq.q7') || 'Can I self-host CommitPulse?',
       answer:
         t('faq.a7') ||
-        'Our AI is trained specifically on thousands of high-quality commits from popular open-source repositories. It produces context-aware, professional messages with very high accuracy.',
+        'Yes. The entire project is open source. You can run it locally or deploy it on Vercel, Railway, or any hosting platform.',
+      category: 'Self Hosting',
     },
     {
-      question: t('faq.q8') || 'Can I use CommitPulse with VS Code?',
+      id: 8,
+      question: t('faq.q8') || 'How can I contribute to the project?',
       answer:
         t('faq.a8') ||
-        'Yes! We provide a VS Code extension that brings CommitPulse directly into your editor. You can also copy messages and use them anywhere.',
-    },
-    {
-      question: t('faq.q9') || 'Is my code/data private?',
-      answer:
-        t('faq.a9') ||
-        'Yes. We do not store your code or commit messages. Everything is processed securely and deleted immediately after generation.',
-    },
-    {
-      question: t('faq.q10') || 'How can I contribute to the project?',
-      answer:
-        t('faq.a10') ||
-        'We welcome contributions! Check out our GitHub repository for issues, feature requests, and contribution guidelines.',
+        'We welcome contributions! Check our GitHub repository for open issues, feature requests, and the contribution guidelines.',
+      category: 'Community',
     },
   ];
 
+  const filteredFaqs = useMemo(() => {
+    return faqs.filter(
+      (faq) =>
+        faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
+  const toggleFAQ = (id: number) => {
+    setOpenIndex(openIndex === id ? null : id);
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
-      <div className="mx-auto max-w-3xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-black dark:text-white mb-4">
-            {t('faq.title') || 'Frequently Asked Questions'}
-          </h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-            {t('faq.subtitle') || 'Everything you need to know about CommitPulse'}
-          </p>
-        </div>
-
-        {/* FAQ Accordion */}
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden transition-all duration-200"
-            >
-              <button
-                onClick={() => toggleFAQ(index)}
-                className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800/50 focus:outline-none group"
-                aria-expanded={openIndex === index}
-              >
-                <span className="font-medium text-lg text-black dark:text-white pr-4">
-                  {faq.question}
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-950 dark:to-zinc-900 py-12 overflow-hidden">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid lg:grid-cols-2 gap-16 items-start">
+          {/* ==================== LEFT COLUMN ==================== */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+            className="lg:sticky lg:top-24 lg:self-start space-y-8"
+          >
+            <div>
+              <div className="inline-flex items-center gap-3 px-4 py-2 bg-teal-100 dark:bg-teal-950 rounded-full mb-6">
+                <Sparkles className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <span className="text-sm font-medium text-teal-700 dark:text-teal-300">
+                  Help Center
                 </span>
-                <span className="text-2xl text-zinc-400 group-hover:text-teal-600 dark:group-hover:text-violet-400 transition-colors">
-                  {openIndex === index ? '−' : '+'}
-                </span>
-              </button>
+              </div>
 
-              <div
-                className={`overflow-hidden transition-all duration-300 ${
-                  openIndex === index ? 'max-h-96 pb-6' : 'max-h-0'
-                }`}
-              >
-                <div className="px-6 text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  {faq.answer}
-                </div>
+              <h1 className="text-5xl md:text-6xl font-bold text-black dark:text-white leading-tight">
+                Frequently Asked
+                <br />
+                <span className="bg-gradient-to-r from-teal-500 to-violet-500 bg-clip-text text-transparent">
+                  Questions
+                </span>
+              </h1>
+
+              <p className="mt-6 text-xl text-zinc-600 dark:text-zinc-400 max-w-md">
+                Find answers to common questions about CommitPulse. Can’t find what you’re looking
+                for? Reach out to us.
+              </p>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400">
+                <Search size={20} />
+              </div>
+              <input
+                type="text"
+                placeholder="Search questions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:border-teal-500 text-lg placeholder:text-zinc-400"
+              />
+            </div>
+
+            {/* Quick Links */}
+            <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm uppercase tracking-widest text-zinc-500 mb-4">
+                Still need help?
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="/support"
+                  className="px-6 py-3 bg-black text-white dark:bg-white dark:text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                >
+                  Contact Support
+                </a>
+                <a
+                  href="https://github.com/JhaSourav07/commitpulse"
+                  target="_blank"
+                  className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 rounded-full font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  GitHub Discussions
+                </a>
               </div>
             </div>
-          ))}
-        </div>
+          </motion.div>
 
-        {/* Still have questions? */}
-        <div className="mt-16 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10">
-          <h3 className="text-2xl font-semibold mb-3 text-black dark:text-white">
-            {t('faq.still_question') || 'Still have questions?'}
-          </h3>
-          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-            {t('faq.contact_us') || 'Our team is happy to help you.'}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="https://github.com/JhaSourav07/commitpulse/issues"
-              target="_blank"
-              className="inline-flex items-center justify-center px-6 py-3 bg-black dark:bg-white text-white dark:text-black font-medium rounded-xl hover:scale-105 transition-transform"
-            >
-              Open GitHub Issue
-            </Link>
-
-            <a
-              href="https://discord.gg/Cb73bS79j"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-6 py-3 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium rounded-xl transition-all"
-            >
-              Join Discord Community
-            </a>
-          </div>
-        </div>
-
-        {/* Back to Home */}
-        <div className="text-center mt-10">
-          <Link
-            href="/"
-            className="text-teal-600 dark:text-violet-400 hover:underline inline-flex items-center gap-2"
+          {/* ==================== RIGHT COLUMN - FAQ Accordion ==================== */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="space-y-4"
           >
-            ← Back to Home
-          </Link>
+            <AnimatePresence mode="wait">
+              {filteredFaqs.length > 0 ? (
+                filteredFaqs.map((faq, idx) => (
+                  <motion.div
+                    key={faq.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm"
+                  >
+                    <button
+                      onClick={() => toggleFAQ(faq.id)}
+                      className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-950/50 transition-colors group"
+                    >
+                      <div className="pr-6 text-lg font-medium text-black dark:text-white">
+                        {faq.question}
+                      </div>
+                      <ChevronDown
+                        className={`w-6 h-6 text-zinc-400 group-hover:text-teal-500 transition-all duration-300 ${
+                          openIndex === faq.id ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    <AnimatePresence>
+                      {openIndex === faq.id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.4, ease: 'easeInOut' }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-8 pb-8 text-zinc-600 dark:text-zinc-400 leading-relaxed text-[17px]">
+                            {faq.answer}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-center py-20 text-zinc-500">No matching questions found.</div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </div>
     </div>
