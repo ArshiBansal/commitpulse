@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/context/TranslationContext';
-import { ChevronDown, Search, Sparkles } from 'lucide-react';
+import { HelpCircle, ChevronDown, Search, Sparkles } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,72 +17,75 @@ export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const faqs: FAQItem[] = [
-    {
-      id: 1,
-      question: t('faq.q1') || 'What is CommitPulse?',
-      answer:
-        t('faq.a1') ||
-        'CommitPulse is an intelligent AI-powered commit message generator that helps developers write clear, professional, and standardized commit messages in seconds.',
-      category: 'General',
-    },
-    {
-      id: 2,
-      question: t('faq.q2') || 'How does the AI generate commit messages?',
-      answer:
-        t('faq.a2') ||
-        'It analyzes your code diff, understands the changes, and generates Conventional Commit formatted messages with appropriate type, scope, and emoji (if enabled).',
-      category: 'How it Works',
-    },
-    {
-      id: 3,
-      question: t('faq.q3') || 'Is CommitPulse completely free?',
-      answer:
-        t('faq.a3') ||
-        'Yes! The tool is 100% free, open source, and requires no API keys or sign-up.',
-      category: 'Pricing',
-    },
-    {
-      id: 4,
-      question: t('faq.q4') || 'What commit conventions does it support?',
-      answer:
-        t('faq.a4') ||
-        'It follows Conventional Commits standard and can adapt to Angular, Semantic Versioning, and custom team conventions.',
-      category: 'Features',
-    },
-    {
-      id: 5,
-      question: t('faq.q5') || 'Can I customize the output style?',
-      answer:
-        t('faq.a5') ||
-        'Absolutely. On the Customize page you can control tone, length, emoji usage, capitalization, and preferred commit types.',
-      category: 'Features',
-    },
-    {
-      id: 6,
-      question: t('faq.q6') || 'Do you store my code?',
-      answer:
-        t('faq.a6') ||
-        'No. Everything runs locally in your browser. Your code is never sent to any server.',
-      category: 'Privacy',
-    },
-    {
-      id: 7,
-      question: t('faq.q7') || 'Can I self-host CommitPulse?',
-      answer:
-        t('faq.a7') ||
-        'Yes. The entire project is open source. You can run it locally or deploy it on Vercel, Railway, or any hosting platform.',
-      category: 'Self Hosting',
-    },
-    {
-      id: 8,
-      question: t('faq.q8') || 'How can I contribute to the project?',
-      answer:
-        t('faq.a8') ||
-        'We welcome contributions! Check our GitHub repository for open issues, feature requests, and the contribution guidelines.',
-      category: 'Community',
-    },
-  ];
+  const faqs: FAQItem[] = useMemo(
+    () => [
+      {
+        id: 1,
+        question: t('faq.q1') || 'What is CommitPulse?',
+        answer:
+          t('faq.a1') ||
+          'CommitPulse is an intelligent AI-powered commit message generator that helps developers write clear, professional, and standardized commit messages in seconds.',
+        category: 'General',
+      },
+      {
+        id: 2,
+        question: t('faq.q2') || 'How does the AI generate commit messages?',
+        answer:
+          t('faq.a2') ||
+          'It analyzes your code diff, understands the changes, and generates Conventional Commit formatted messages with appropriate type, scope, and emoji (if enabled).',
+        category: 'How it Works',
+      },
+      {
+        id: 3,
+        question: t('faq.q3') || 'Is CommitPulse completely free?',
+        answer:
+          t('faq.a3') ||
+          'Yes! The tool is 100% free, open source, and requires no API keys or sign-up.',
+        category: 'Pricing',
+      },
+      {
+        id: 4,
+        question: t('faq.q4') || 'What commit conventions does it support?',
+        answer:
+          t('faq.a4') ||
+          'It follows Conventional Commits standard and can adapt to Angular, Semantic Versioning, and custom team conventions.',
+        category: 'Features',
+      },
+      {
+        id: 5,
+        question: t('faq.q5') || 'Can I customize the output style?',
+        answer:
+          t('faq.a5') ||
+          'Absolutely. On the Customize page you can control tone, length, emoji usage, capitalization, and preferred commit types.',
+        category: 'Features',
+      },
+      {
+        id: 6,
+        question: t('faq.q6') || 'Do you store my code?',
+        answer:
+          t('faq.a6') ||
+          'No. Everything runs locally in your browser. Your code is never sent to any server.',
+        category: 'Privacy',
+      },
+      {
+        id: 7,
+        question: t('faq.q7') || 'Can I self-host CommitPulse?',
+        answer:
+          t('faq.a7') ||
+          'Yes. The entire project is open source. You can run it locally or deploy it on Vercel, Railway, or any hosting platform.',
+        category: 'Self Hosting',
+      },
+      {
+        id: 8,
+        question: t('faq.q8') || 'How can I contribute to the project?',
+        answer:
+          t('faq.a8') ||
+          'We welcome contributions! Check our GitHub repository for open issues, feature requests, and the contribution guidelines.',
+        category: 'Community',
+      },
+    ],
+    [t]
+  );
 
   const filteredFaqs = useMemo(() => {
     return faqs.filter(
@@ -90,7 +93,7 @@ export default function FAQPage() {
         faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
         faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery, faqs]);
+  }, [faqs, searchQuery]);
 
   const toggleFAQ = (id: number) => {
     setOpenIndex(openIndex === id ? null : id);
@@ -114,7 +117,6 @@ export default function FAQPage() {
                   Help Center
                 </span>
               </div>
-
               <h1 className="text-5xl md:text-6xl font-bold text-black dark:text-white leading-tight">
                 Frequently Asked
                 <br />
@@ -122,10 +124,9 @@ export default function FAQPage() {
                   Questions
                 </span>
               </h1>
-
               <p className="mt-6 text-xl text-zinc-600 dark:text-zinc-400 max-w-md">
-                Find answers to common questions about CommitPulse. Can't find what you're looking
-                for? Reach out to us.
+                Find answers to common questions about CommitPulse. Can&apos;t find what you&apos;re
+                looking for? Reach out to us.
               </p>
             </div>
 
@@ -158,7 +159,6 @@ export default function FAQPage() {
                 <a
                   href="https://github.com/JhaSourav07/commitpulse"
                   target="_blank"
-                  rel="noopener noreferrer"
                   className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 rounded-full font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   GitHub Discussions
@@ -198,7 +198,6 @@ export default function FAQPage() {
                         }`}
                       />
                     </button>
-
                     <AnimatePresence>
                       {openIndex === faq.id && (
                         <motion.div
