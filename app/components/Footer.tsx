@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslation } from '@/context/TranslationContext';
+import { useState } from 'react';
 import {
   GitFork,
   GitBranch,
@@ -13,7 +14,8 @@ import {
   Sliders,
   Users,
   BookOpen,
-  HelpCircle, // ← Added for FAQ
+  HelpCircle,
+  Mail, // ← Added for newsletter
 } from 'lucide-react';
 import { FaGithub, FaDiscord, FaTwitter, FaLinkedin } from 'react-icons/fa';
 
@@ -93,12 +95,17 @@ const RESOURCE_ICON_MAP: Record<string, React.ReactNode> = {
   documentation: <BookOpen size={15} className="shrink-0" />,
   github_repo: <GitBranch size={15} className="shrink-0" />,
   guidelines: <BookOpen size={15} className="shrink-0" />,
-  faq: <HelpCircle size={15} className="shrink-0" />, // Added
+  faq: <HelpCircle size={15} className="shrink-0" />,
 };
 
 export function Footer() {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
+
+  // Newsletter state
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const navigationLinks: FooterLink[] = [
     { label: t('footer.home'), href: '/', isExternal: false },
@@ -126,7 +133,7 @@ export function Footer() {
       isExternal: false,
     },
     {
-      label: t('footer.faq'), // ← Added
+      label: t('footer.faq'),
       href: '/faq',
       isExternal: false,
     },
@@ -165,15 +172,105 @@ export function Footer() {
     },
   ];
 
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email.trim()) {
+      setMessage({
+        type: 'error',
+        text: t('footer.newsletter.error.empty') || 'Please enter your email address.',
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setMessage({
+        type: 'error',
+        text: t('footer.newsletter.error.invalid') || 'Please enter a valid email address.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage(null);
+
+    // Simulate API call (replace with real backend integration later)
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      setMessage({
+        type: 'success',
+        text:
+          t('footer.newsletter.success') || "Thank you! You've been subscribed to project updates.",
+      });
+      setEmail('');
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: t('footer.newsletter.error.failed') || 'Something went wrong. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer className="mt-auto border-t border-black/5 bg-white/50 px-4 py-8 backdrop-blur dark:border-white/5 dark:bg-zinc-950/50 sm:px-6 md:py-12">
       <div className="mx-auto max-w-6xl">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-2 lg:grid-cols-5 mb-6">
           {/* Brand Section */}
           <div className="flex flex-col items-start lg:col-span-1">
             <h2 className="font-bold text-lg text-black dark:text-white">CommitPulse</h2>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{t('footer.tagline')}</p>
+
+            {/* Newsletter Section - Moved inside brand for better visual hierarchy on smaller screens */}
+            <div className="mt-6 w-full lg:mt-8">
+              <div className="flex items-center gap-2 mb-3">
+                <Mail size={16} className="text-teal-600 dark:text-violet-400" />
+                <h3 className="font-semibold text-sm text-black dark:text-white">
+                  {t('footer.newsletter.title') || 'Stay Updated'}
+                </h3>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-3">
+                {t('footer.newsletter.description') ||
+                  'Get project updates, new features, and release notes.'}
+              </p>
+
+              <form onSubmit={handleSubscribe} className="space-y-2">
+                <div className="flex">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('footer.newsletter.placeholder') || 'your@email.com'}
+                    className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 dark:focus:ring-violet-500 placeholder:text-zinc-400"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-teal-600 hover:bg-teal-700 dark:bg-violet-600 dark:hover:bg-violet-700 text-white text-sm font-medium px-4 rounded-r-lg transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center min-w-[88px]"
+                  >
+                    {isSubmitting ? (
+                      <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white animate-spin rounded-full" />
+                    ) : (
+                      t('footer.newsletter.subscribe') || 'Subscribe'
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              {message && (
+                <p
+                  className={`text-xs mt-2 ${message.type === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  {message.text}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Navigation Section */}
@@ -231,7 +328,7 @@ export function Footer() {
           </div>
 
           {/* Connect Section */}
-          <div className="flex flex-col items-center sm:items-start">
+          <div className="flex flex-col items-center sm:items-start lg:col-span-2">
             <h3 className="font-semibold text-sm text-black dark:text-white mb-3">
               {t('footer.connect')}
             </h3>
